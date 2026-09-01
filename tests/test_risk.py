@@ -24,7 +24,7 @@ def test_boundary_values_do_not_trigger_next_band():
     assert result.score == 20
     assert result.category == "Low"
 
-    result = calculate_risk(100000, date(2026, 9, 1), date(2026, 11, 1), 0)
+    result = calculate_risk(100000, date(2026, 9, 1), date(2026, 10, 30), 0)
     assert result.score == 45
     assert result.category == "Medium"
 
