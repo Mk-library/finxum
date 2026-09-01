@@ -5,7 +5,8 @@
 - GitHub Actions CI runs on pushes and pull requests to `main`.
 - CI uses Python 3.11 and installs the project with the test extra.
 - The pytest suite covers baseline scoring, high-risk scoring, scoring boundaries, invalid amount, invalid dates, negative late payments, SQLite persistence, and Streamlit startup.
-- The latest CI run for the boundary-test hardening commit is currently executing; its result will be recorded after completion.
+- The boundary-test hardening commit was verified successfully by GitHub Actions run #24, including the full `Run tests` step.
+- The latest CI run is a documentation-only follow-up and does not change application code or tests.
 
 ## Manual deployed smoke tests
 
