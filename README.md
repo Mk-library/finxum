@@ -62,6 +62,7 @@ The architecture may separate validation, feature extraction, risk scoring, pers
 - `tests/test_streamlit_app.py` — Streamlit startup test
 - `docs/architecture.md` — current and planned architecture
 - `docs/project-log.md` — implementation and verification record
+- `docs/verification.md` — v0.1 automated and manual verification record
 
 ## Integrity rules
 
@@ -80,4 +81,4 @@ The architecture may separate validation, feature extraction, risk scoring, pers
 - The live Streamlit application has been manually smoke-tested after deployment.
 - Vercel is not used as the primary host because FinXum is a Python/Streamlit application.
 
-See `docs/project-log.md` for the development record.
+See `docs/project-log.md` and `docs/verification.md` for the development and verification records.
