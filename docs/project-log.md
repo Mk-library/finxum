@@ -28,6 +28,13 @@
 - The v0.1 implementation is considered functionally verified and is now frozen for evidence packaging.
 - No claims of real customers, revenue, predictive accuracy, partnerships, production credit decisions, or real-world validation are made.
 
+## 2026-09-02 — Deployment-path cleanup
+
+- Removed the obsolete Vercel `finxum` project because Vercel was attempting to interpret the Streamlit application as a Python serverless function.
+- Streamlit Community Cloud remains the sole intended deployment target for the v0.1 application.
+- The GitHub repository remains the canonical source of code.
+- No application functionality was changed by this cleanup.
+
 ## AI assistance
 
 AI tools may be used during development for code scaffolding, debugging, documentation and test assistance. Product decisions, validation, testing and final interpretation must remain attributable to the project owner and must reflect the actual implementation.
