@@ -5,7 +5,7 @@
 - GitHub Actions CI runs on pushes and pull requests to `main`.
 - CI uses Python 3.11 and installs the project with the test extra.
 - The pytest suite covers baseline scoring, high-risk scoring, scoring boundaries, invalid amount, invalid dates, negative late payments, SQLite persistence, and Streamlit startup.
-- The latest verified CI run for the v0.1 hardening changes completed successfully.
+- The latest CI run for the boundary-test hardening commit is currently executing; its result will be recorded after completion.
 
 ## Manual deployed smoke tests
 
@@ -26,4 +26,4 @@ These tests verify application behaviour. They do not establish predictive accur
 
 ## v0.1 status
 
-The current implementation is functionally verified and frozen for portfolio/application evidence packaging. New product capabilities belong in a separately scoped v0.2 rather than being added opportunistically to the v0.1 verification record.
+The application functionality is verified. The current changes are verification/documentation hardening only; no new product capability has been added. New product capabilities belong in a separately scoped v0.2 rather than being added opportunistically to the v0.1 verification record.
