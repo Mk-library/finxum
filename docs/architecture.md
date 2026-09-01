@@ -1,27 +1,36 @@
 # Architecture
 
-## MVP architecture
+## Current — v0.1
 
-FinXum follows a simple, explainable pipeline:
+FinXum follows a deliberately small, explainable pipeline:
 
-`Streamlit UI → application/risk services → SQLite`
+`Streamlit UI → Python application/risk logic → SQLite`
 
-The application will later expose an API boundary where it adds value and integrate with n8n through a webhook for risk events.
+The current risk logic validates the supplied inputs, derives the values needed by the rules, applies the versioned deterministic scoring rules, and returns explanatory drivers. Results and the applicable rules version are stored with the assessment.
 
-## Planned components
+### Components implemented
 
-- **UI:** Streamlit for a fast, reliable portfolio MVP.
-- **Application logic:** Python services with clear boundaries between validation, feature calculation, risk scoring and persistence.
-- **Data processing:** pandas and NumPy where justified.
-- **Database:** SQLite for local MVP persistence without external infrastructure.
+- **UI:** Streamlit.
+- **Application logic:** Python risk calculation and validation.
+- **Database:** SQLite for MVP assessment persistence and history.
 - **Risk engine:** deterministic, versioned, interpretable rules/weighted scoring.
-- **Automation:** n8n webhook triggered by qualifying risk events.
-- **Testing:** pytest.
+- **Testing:** pytest and Streamlit AppTest.
+- **CI:** GitHub Actions on Python 3.11.
+
+## Planned — v0.2+
+
+Future boundaries will be introduced only when they provide real engineering value:
+
+- **Feature extraction:** an explicit layer for derived invoice/business features.
+- **API boundary:** programmatic access to the risk engine if needed.
+- **Automation:** n8n webhook integration for qualifying risk events.
+- **Invoice intelligence:** document/extraction capabilities only when implemented and tested.
+- **Optional explanation layer:** an LLM may explain deterministic outputs, but it will not silently replace or determine the risk engine.
 
 ## Integrity
 
-Risk decisions must be reproducible from stored inputs/features and the applicable rules/model version. An optional LLM explanation layer, if implemented, will receive deterministic outputs and will not silently replace the risk engine.
+Risk decisions must be reproducible from stored inputs/features and the applicable rules/model version. Synthetic/demo data must remain clearly labelled. Planned components are not described as implemented until they are implemented and tested.
 
 ## Status
 
-Architecture is documented before implementation. Components will be marked complete only after they are implemented and tested.
+The v0.1 architecture is implemented and verified through automated tests plus manual smoke testing of the deployed Streamlit application. Planned components remain explicitly separated from the current implementation.
