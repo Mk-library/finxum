@@ -1,12 +1,19 @@
 """Streamlit MVP for FinXum."""
 
 from datetime import date, timedelta
+from pathlib import Path
+import sys
 
 import streamlit as st
 
-from .config import DB_PATH, DISCLAIMER, RULES_VERSION
-from .database import initialize, list_assessments, save_assessment
-from .risk import calculate_risk
+# Make this module safe to launch directly with Streamlit from app/main.py.
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(_PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_PROJECT_ROOT))
+
+from app.config import DB_PATH, DISCLAIMER, RULES_VERSION
+from app.database import initialize, list_assessments, save_assessment
+from app.risk import calculate_risk
 
 st.set_page_config(page_title="FinXum", page_icon="📊", layout="wide")
 initialize(DB_PATH)
