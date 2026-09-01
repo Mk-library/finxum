@@ -4,9 +4,9 @@ from datetime import date, timedelta
 
 import streamlit as st
 
-from app.config import DB_PATH, DISCLAIMER, RULES_VERSION
-from app.database import initialize, list_assessments, save_assessment
-from app.risk import calculate_risk
+from .config import DB_PATH, DISCLAIMER, RULES_VERSION
+from .database import initialize, list_assessments, save_assessment
+from .risk import calculate_risk
 
 st.set_page_config(page_title="FinXum", page_icon="📊", layout="wide")
 initialize(DB_PATH)
