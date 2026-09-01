@@ -43,7 +43,7 @@ def save_assessment(data: dict, db_path: str = "finxum.db") -> int:
             (reference, amount, issue_date, due_date, prior_late_payments,
              score, risk_category, drivers, rules_version, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """ ,
+            """,
             (
                 data["reference"], data["amount"], data["issue_date"],
                 data["due_date"], data["prior_late_payments"], data["score"],
