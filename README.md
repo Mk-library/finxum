@@ -1,39 +1,67 @@
 # FinXum
 
-**Financial risk analysis and invoice intelligence prototype built with Python.**
+**Financial risk analysis prototype built with Python.**
 
 > Educational/demo prototype. Not financial advice and not a real credit decision system.
 
-## Current status
+## Current status — v0.1
 
-FinXum contains the first implemented application slice: an interpretable, deterministic invoice-risk baseline, SQLite persistence, a Streamlit interface, and a pytest test suite. The repository CI pipeline currently passes on the main branch.
+FinXum v0.1 implements an interpretable, deterministic invoice-risk baseline with input validation, SQLite persistence, a Streamlit interface, automated tests, and GitHub Actions CI.
+
+The deployed Streamlit application has also been manually smoke-tested for normal assessment, invalid input handling, high-risk assessment, history retrieval, and methodology navigation.
+
+## Live demo
+
+https://finxum.streamlit.app
 
 ## MVP flow
 
-`Input → Validation → Features → Versioned Risk Rules → Explanation → SQLite → History → n8n`
+`Input → Validation → Risk Rules → Explanation → SQLite → History`
 
-## Scope
+## Scope — implemented in v0.1
 
 - Dynamic invoice/business assessment inputs
-- Transparent financial features and deterministic risk scoring
+- Transparent deterministic risk scoring
 - Versioned rules and traceable results
 - SQLite persistence
 - Synthetic/demo data, clearly labelled
-- Streamlit interface for the MVP
-- Tests and documentation
-- n8n webhook automation after the core application is stable
+- Streamlit interface
+- Automated tests and GitHub Actions CI
+- Methodology and development documentation
+
+## Planned — not implemented in v0.1
+
+- Feature-extraction layer with explicit boundaries
+- API boundary for programmatic access
+- n8n webhook automation for qualifying risk events
+- More advanced invoice intelligence capabilities
+- Optional LLM explanation layer that does not determine the risk score
 
 ## Architecture
 
-The canonical application lives under `app/` and is packaged/tested from that layout. The first implementation consists of:
+The canonical application lives under `app/` and is packaged/tested from that layout.
 
-- `app/risk.py` — deterministic scoring and explanatory drivers
+### Current v0.1
+
+`Streamlit UI → Python application/risk logic → SQLite`
+
+The risk logic currently performs validation, derives the required inputs/features, applies versioned deterministic rules, and returns explanatory drivers.
+
+### Planned v0.2+
+
+The architecture may separate validation, feature extraction, risk scoring, persistence, and external automation when those boundaries provide real engineering value.
+
+## Repository structure
+
+- `app/risk.py` — deterministic scoring, validation, and explanatory drivers
 - `app/database.py` — SQLite persistence and history queries
 - `app/main.py` — Streamlit UI
-- `app/config.py` — application/rules configuration
-- `tests/test_risk.py` — baseline unit tests
+- `app/config.py` — application and rules configuration
+- `tests/test_risk.py` — risk-engine unit tests
 - `tests/test_database.py` — persistence round-trip test
 - `tests/test_streamlit_app.py` — Streamlit startup test
+- `docs/architecture.md` — current and planned architecture
+- `docs/project-log.md` — implementation and verification record
 
 ## Integrity rules
 
@@ -46,10 +74,10 @@ The canonical application lives under `app/` and is packaged/tested from that la
 
 ## Verification & deployment
 
-- The repository test suite passes in GitHub Actions on Python 3.11.
+- GitHub Actions CI runs the test suite on Python 3.11 for pushes and pull requests to `main`.
 - The Streamlit app has an automated startup test covering the UI entry module.
-- `requirements.txt` pins the Streamlit runtime version used by the deployment target.
-- Vercel is not being used as the primary Streamlit host because FinXum is a Python/Streamlit application.
-- Live Streamlit Cloud behavior still requires external runtime confirmation; repository CI cannot prove that the deployed Cloud instance is serving the latest commit.
+- The deployment runtime pins Streamlit to `1.62.0`.
+- The live Streamlit application has been manually smoke-tested after deployment.
+- Vercel is not used as the primary host because FinXum is a Python/Streamlit application.
 
 See `docs/project-log.md` for the development record.
