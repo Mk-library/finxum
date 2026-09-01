@@ -24,7 +24,9 @@ https://finxum.streamlit.app
 - Transparent deterministic risk scoring
 - Versioned rules and traceable results
 - SQLite persistence
-- Synthetic/demo data, clearly labelled
+- 25 clearly labelled synthetic demo scenarios, scored via `calculate_risk()`
+- One-click "Load 25 Synthetic Demo Assessments" loader with duplicate prevention
+- Analytics page with Plotly charts (category breakdown, score distribution, amount vs. score)
 - Streamlit interface
 - Automated tests and GitHub Actions CI
 - Methodology and development documentation
@@ -55,12 +57,19 @@ The architecture may separate validation, feature extraction, risk scoring, pers
 
 - `app/risk.py` — deterministic scoring, validation, and explanatory drivers
 - `app/database.py` — SQLite persistence and history queries
-- `app/main.py` — Streamlit UI
+- `app/main.py` — Streamlit UI, including the Analytics page
+- `app/analytics.py` — pure aggregation helpers for the Analytics page
+- `app/synthetic_data.py` — the 25 labelled synthetic demo scenarios
+- `app/demo_loader.py` — duplicate-safe loader that scores and persists the synthetic scenarios
 - `app/config.py` — application and rules configuration
 - `tests/test_risk.py` — risk-engine unit tests
 - `tests/test_database.py` — persistence round-trip test
-- `tests/test_streamlit_app.py` — Streamlit startup test
+- `tests/test_synthetic_data.py` — synthetic scenario shape and scoring cross-checks
+- `tests/test_demo_loader.py` — demo loader and duplicate-prevention tests
+- `tests/test_analytics.py` — analytics aggregation helper tests
+- `tests/test_streamlit_app.py` — Streamlit startup and Analytics/demo-loader tests
 - `docs/architecture.md` — current and planned architecture
+- `docs/methodology.md` — scoring methodology, synthetic scenario design, and duplicate-prevention design
 - `docs/project-log.md` — implementation and verification record
 - `docs/verification.md` — v0.1 automated and manual verification record
 
@@ -81,4 +90,4 @@ The architecture may separate validation, feature extraction, risk scoring, pers
 - The live Streamlit application has been manually smoke-tested after deployment.
 - Vercel is not used as the primary host because FinXum is a Python/Streamlit application.
 
-See `docs/project-log.md` and `docs/verification.md` for the development and verification records.
+See `docs/methodology.md` for the full scoring, synthetic-data, and duplicate-prevention design, and `docs/project-log.md` / `docs/verification.md` for the development and verification records.
