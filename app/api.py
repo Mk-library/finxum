@@ -4,6 +4,10 @@ This mirrors the scoring path used by the Streamlit UI (app/main.py): validate
 input, call calculate_risk(), persist the result, and return it. Every
 assessment scored through this API is saved into the same SQLite history
 table used by the Streamlit app.
+
+Also mounts the n8n webhook router (app/webhooks.py) under /webhooks/n8n,
+which uses the same scoring/persistence path but with its own strict
+payload schema and bearer-token authentication for automated callers.
 """
 
 from datetime import date
@@ -12,8 +16,9 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 from .config import APP_VERSION, DB_PATH, DISCLAIMER, RULES_VERSION
-from .database import initialize, save_assessment
-from .risk import calculate_risk
+from .database import initialize
+from .risk_service import RiskAssessmentResult, score_and_persist
+from .webhooks import router as n8n_webhook_router
 
 app = FastAPI(
     title="FinXum Risk API",
@@ -22,6 +27,7 @@ app = FastAPI(
 )
 
 initialize(DB_PATH)
+app.include_router(n8n_webhook_router)
 
 
 class RiskAssessmentRequest(BaseModel):
@@ -32,53 +38,21 @@ class RiskAssessmentRequest(BaseModel):
     prior_late_payments: int = Field(..., ge=0)
 
 
-class RiskAssessmentResponse(BaseModel):
-    id: int
-    reference: str
-    score: int
-    category: str
-    drivers: list[str]
-    rules_version: str
-
-
 @app.get("/health")
 def health() -> dict:
     return {"status": "ok", "app_version": APP_VERSION, "rules_version": RULES_VERSION}
 
 
-@app.post("/risk/assess", response_model=RiskAssessmentResponse)
-def assess_risk(request: RiskAssessmentRequest) -> RiskAssessmentResponse:
+@app.post("/risk/assess", response_model=RiskAssessmentResult)
+def assess_risk(request: RiskAssessmentRequest) -> RiskAssessmentResult:
     try:
-        result = calculate_risk(
+        return score_and_persist(
+            request.reference,
             request.amount,
             request.issue_date,
             request.due_date,
             request.prior_late_payments,
+            DB_PATH,
         )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
-
-    reference = (request.reference or "").strip() or "UNSPECIFIED"
-    assessment_id = save_assessment(
-        {
-            "reference": reference,
-            "amount": request.amount,
-            "issue_date": request.issue_date.isoformat(),
-            "due_date": request.due_date.isoformat(),
-            "prior_late_payments": request.prior_late_payments,
-            "score": result.score,
-            "risk_category": result.category,
-            "drivers": result.drivers,
-            "rules_version": result.rules_version,
-        },
-        DB_PATH,
-    )
-
-    return RiskAssessmentResponse(
-        id=assessment_id,
-        reference=reference,
-        score=result.score,
-        category=result.category,
-        drivers=result.drivers,
-        rules_version=result.rules_version,
-    )
