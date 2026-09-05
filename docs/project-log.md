@@ -109,6 +109,44 @@
   deployed Streamlit Cloud app, and this work had not yet been pushed to
   `origin/main` at the time of this entry.
 
+## 2026-09-05 — End-to-end n8n Cloud → FastAPI → SQLite pipeline verified
+
+- Exposed the local FastAPI service (running via `uvicorn app.api:app` on
+  port 8000) to the public internet through a temporary `ngrok` tunnel, so
+  an n8n Cloud workflow could reach it. This is a local development
+  server behind a temporary public tunnel, not a permanent or production
+  deployment; the tunnel URL is only valid while the local process and
+  tunnel are both running.
+- Built and imported an n8n workflow ("FinXum Risk Assessor Pipeline")
+  with a node that calls `POST /webhooks/n8n/risk-event` through the
+  tunnel URL.
+- Debugged two real failures surfaced by live test runs in n8n Cloud:
+  - execution 7 failed with a `422` from the API (`reference: Field
+    required`) because the request body omitted the required `reference`
+    field;
+  - the workflow then failed with "Credentials not found" after the
+    bearer token was moved out of a hardcoded node field into a proper
+    n8n credential, because the node referenced the new credential before
+    it had been created.
+- Both were fixed in the n8n workflow itself (adding `reference` to the
+  request body; creating and attaching the credential holding the bearer
+  token, so the secret is no longer stored in plain text in the workflow
+  definition).
+- Execution 10 succeeded end-to-end: n8n Cloud sent a real HTTP request
+  through the public tunnel to the local FastAPI service, which validated
+  the bearer token against `FINXUM_N8N_WEBHOOK_SECRET`, scored the
+  invoice via the existing `calculate_risk()`, and persisted it via
+  `save_assessment()`. Confirmed independently on the FastAPI side via
+  `list_assessments()`: assessment id 6, reference `INV-2026-0001`, score
+  45, category Medium, matching what n8n reported.
+- This confirms the full local chain — n8n Cloud, the public tunnel, the
+  FastAPI boundary, the bearer-token authentication, and SQLite
+  persistence — works together end-to-end. It does not confirm a
+  production or permanently-hosted deployment: the FastAPI service is
+  still local-only, reachable solely through the temporary tunnel, and
+  this work had not yet been pushed to `origin/main` at the time of this
+  entry.
+
 ## AI assistance
 
 AI tools may be used during development for code scaffolding, debugging, documentation and test assistance. Product decisions, validation, testing and final interpretation must remain attributable to the project owner and must reflect the actual implementation.
