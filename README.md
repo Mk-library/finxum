@@ -30,7 +30,7 @@ https://finxum.streamlit.app
 - Streamlit interface
 - FastAPI boundary for programmatic risk scoring (`POST /risk/assess`), persisting results to the same history table
 - Authenticated n8n webhook integration (`POST /webhooks/n8n/risk-event`) so an n8n workflow can submit invoice data for scoring; secured with bearer-token authentication (fails closed if unconfigured) and a strict, schema-validated payload
-- Optional persistent storage: set `DATABASE_URL` to a SQLAlchemy URL (e.g. Postgres) to move off the local SQLite file; defaults to local SQLite if unset, with a UI warning that local storage is not durable across redeploys/restarts
+- Optional persistent storage: set `DATABASE_URL` to a SQLAlchemy URL (e.g. Postgres) to move off the local SQLite file; defaults to local SQLite if unset, with a UI warning that local storage is not durable across redeploys/restarts. Using a `postgresql+psycopg://` URL requires also adding the `postgres` extra (`psycopg[binary]`) to the deployment's installed dependencies — it is intentionally not in the default `requirements.txt` so the base app has no compiled-dependency install risk
 - Per-client rate limiting on the public `POST /risk/assess` endpoint and the n8n webhook, plus a per-session submission cooldown on the Streamlit form
 - Automated tests and GitHub Actions CI
 - Methodology and development documentation

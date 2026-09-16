@@ -191,6 +191,31 @@
   action, not a code change, and is intentionally left to the project
   owner.
 
+## 2026-09-16 — Fix: live deployment broken by unconditional psycopg pin
+
+- The previous entry's commit pinned `psycopg[binary]==3.2.3` directly in
+  `requirements.txt`, so it was installed on every deployment regardless of
+  whether `DATABASE_URL` was actually set to Postgres. This broke the live
+  `finxum.streamlit.app` deployment: Streamlit Cloud's build failed with
+  "installer returned a non-zero exit code" while processing dependencies,
+  consistent with `psycopg[binary]` (a compiled C-extension package) not
+  having a matching prebuilt wheel for that build environment and failing
+  to build from source there.
+- The live app was not even using Postgres yet (`DATABASE_URL` was never
+  set on that deployment) — the dependency was added ahead of need and
+  should not have been unconditional.
+- Fix: removed `psycopg[binary]` from `requirements.txt`. It remains
+  available as the opt-in `postgres` extra in `pyproject.toml`
+  (`pip install -e ".[postgres]"`); anyone who sets `DATABASE_URL` to a
+  `postgresql+psycopg://` URL must add that extra to their own
+  deployment's installed dependencies. `sqlalchemy` alone stays in
+  `requirements.txt` since it has no compiled-dependency install risk and
+  is required for the local-SQLite path too.
+- Verified: a clean virtualenv installing only `requirements.txt` (no
+  `psycopg`) successfully imports `app.api` and boots the Streamlit app
+  (`AppTest`) with no exception. Full local `pytest -q` still passes,
+  88/88 (unaffected, since no test connects to a real Postgres URL).
+
 ## AI assistance
 
 AI tools may be used during development for code scaffolding, debugging, documentation and test assistance. Product decisions, validation, testing and final interpretation must remain attributable to the project owner and must reflect the actual implementation.
