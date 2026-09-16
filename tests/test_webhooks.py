@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 from app import webhooks
 from app.api import app
 from app.database import initialize, list_assessments
+from app.rate_limit import RateLimiter
 from app.webhooks import WEBHOOK_SECRET_ENV_VAR
 
 client = TestClient(app)
@@ -25,6 +26,12 @@ def isolated_db(tmp_path, monkeypatch):
     initialize(db_path)
     monkeypatch.setattr(webhooks, "DB_PATH", db_path)
     return db_path
+
+
+@pytest.fixture(autouse=True)
+def reset_rate_limiter(monkeypatch):
+    """Give each test its own limiter budget so tests can't starve each other."""
+    monkeypatch.setattr(webhooks, "_webhook_limiter", RateLimiter(max_requests=30, window_seconds=60))
 
 
 @pytest.fixture
@@ -105,3 +112,22 @@ def test_rejects_invalid_business_rule(configured_secret, isolated_db):
     )
     assert response.status_code == 422
     assert list_assessments(isolated_db) == []
+
+
+def test_rate_limits_per_client(configured_secret, isolated_db, monkeypatch):
+    monkeypatch.setattr(webhooks, "_webhook_limiter", RateLimiter(max_requests=2, window_seconds=60))
+
+    for _ in range(2):
+        response = client.post(
+            "/webhooks/n8n/risk-event",
+            json=VALID_PAYLOAD,
+            headers={"Authorization": f"Bearer {configured_secret}"},
+        )
+        assert response.status_code == 200
+
+    response = client.post(
+        "/webhooks/n8n/risk-event",
+        json=VALID_PAYLOAD,
+        headers={"Authorization": f"Bearer {configured_secret}"},
+    )
+    assert response.status_code == 429

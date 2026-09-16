@@ -12,11 +12,12 @@ payload schema and bearer-token authentication for automated callers.
 
 from datetime import date
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from .config import APP_VERSION, DB_PATH, DISCLAIMER, RULES_VERSION
 from .database import initialize
+from .rate_limit import RateLimiter, client_key
 from .risk_service import RiskAssessmentResult, score_and_persist
 from .webhooks import router as n8n_webhook_router
 
@@ -28,6 +29,10 @@ app = FastAPI(
 
 initialize(DB_PATH)
 app.include_router(n8n_webhook_router)
+
+# Public, unauthenticated endpoint — rate-limited per client IP to stop a
+# single caller from writing unbounded rows into shared storage.
+_assess_limiter = RateLimiter(max_requests=10, window_seconds=60)
 
 
 class RiskAssessmentRequest(BaseModel):
@@ -44,7 +49,8 @@ def health() -> dict:
 
 
 @app.post("/risk/assess", response_model=RiskAssessmentResult)
-def assess_risk(request: RiskAssessmentRequest) -> RiskAssessmentResult:
+def assess_risk(request: RiskAssessmentRequest, http_request: Request) -> RiskAssessmentResult:
+    _assess_limiter.check(client_key(http_request))
     try:
         return score_and_persist(
             request.reference,

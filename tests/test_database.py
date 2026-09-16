@@ -29,3 +29,29 @@ def test_assessment_persists_and_round_trips(tmp_path):
     assert rows[0]["reference"] == "TEST-001"
     assert rows[0]["score"] == 10
     assert rows[0]["risk_category"] == "Low"
+
+
+def test_accepts_a_database_url_not_just_a_plain_path(tmp_path):
+    db_url = f"sqlite:///{tmp_path / 'finxum.db'}"
+    initialize(db_url)
+
+    result = calculate_risk(2000, date(2026, 9, 1), date(2026, 9, 15), 0)
+    assessment_id = save_assessment(
+        {
+            "reference": "URL-001",
+            "amount": 2000,
+            "issue_date": "2026-09-01",
+            "due_date": "2026-09-15",
+            "prior_late_payments": 0,
+            "score": result.score,
+            "risk_category": result.category,
+            "drivers": result.drivers,
+            "rules_version": result.rules_version,
+        },
+        db_url,
+    )
+
+    rows = list_assessments(db_url)
+    assert assessment_id == 1
+    assert len(rows) == 1
+    assert rows[0]["reference"] == "URL-001"

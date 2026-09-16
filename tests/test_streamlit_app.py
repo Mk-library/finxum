@@ -45,3 +45,29 @@ def test_load_synthetic_demo_button_populates_history_without_duplicates(tmp_pat
 
     app.sidebar.radio[0].set_value("History").run(timeout=30)
     assert len(app.dataframe[0].value) == 25
+
+
+def test_new_assessment_form_is_rate_limited_per_session(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+
+    app = AppTest.from_file(APP_PATH).run(timeout=30)
+    assert not app.exception
+
+    for _ in range(5):
+        app.button[0].click().run(timeout=30)
+        assert not app.exception
+        assert app.success
+
+    app.button[0].click().run(timeout=30)
+    assert not app.exception
+    assert app.error
+    assert "Too many assessments submitted" in app.error[0].value
+
+
+def test_shows_persistence_warning_without_database_url(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+
+    app = AppTest.from_file(APP_PATH).run(timeout=30)
+    assert not app.exception
+    assert any("non-persistent storage" in w.value for w in app.warning)

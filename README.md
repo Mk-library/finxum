@@ -28,8 +28,10 @@ https://finxum.streamlit.app
 - One-click "Load 25 Synthetic Demo Assessments" loader with duplicate prevention
 - Analytics page with Plotly charts (category breakdown, score distribution, amount vs. score)
 - Streamlit interface
-- FastAPI boundary for programmatic risk scoring (`POST /risk/assess`), persisting results to the same SQLite history table
+- FastAPI boundary for programmatic risk scoring (`POST /risk/assess`), persisting results to the same history table
 - Authenticated n8n webhook integration (`POST /webhooks/n8n/risk-event`) so an n8n workflow can submit invoice data for scoring; secured with bearer-token authentication (fails closed if unconfigured) and a strict, schema-validated payload
+- Optional persistent storage: set `DATABASE_URL` to a SQLAlchemy URL (e.g. Postgres) to move off the local SQLite file; defaults to local SQLite if unset, with a UI warning that local storage is not durable across redeploys/restarts
+- Per-client rate limiting on the public `POST /risk/assess` endpoint and the n8n webhook, plus a per-session submission cooldown on the Streamlit form
 - Automated tests and GitHub Actions CI
 - Methodology and development documentation
 
@@ -98,5 +100,7 @@ The architecture may separate validation, feature extraction, risk scoring, pers
 - Vercel is not used as the primary host because FinXum is a Python/Streamlit application.
 - The FastAPI service (`app/api.py`) is run locally via `uvicorn app.api:app`; it is not yet part of the deployed Streamlit Cloud app.
 - The n8n webhook (`app/webhooks.py`) requires a `FINXUM_N8N_WEBHOOK_SECRET` environment variable wherever the API runs. The endpoint refuses all requests if this is unset — it never falls back to an unauthenticated mode.
+- The live Streamlit deployment currently runs on local SQLite (`DATABASE_URL` is not yet set there), so History/Analytics data on that deployment is not guaranteed to survive a redeploy or restart; the app surfaces this as an in-UI warning. Setting `DATABASE_URL` to a persistent database removes the warning and the risk.
+- `POST /risk/assess` and `POST /webhooks/n8n/risk-event` are rate-limited per client IP (in-process, resets on restart); the Streamlit form has a matching per-session submission cooldown.
 
 See `docs/methodology.md` for the full scoring, synthetic-data, and duplicate-prevention design, and `docs/project-log.md` / `docs/verification.md` for the development and verification records.

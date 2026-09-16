@@ -39,19 +39,26 @@ import hmac
 import os
 from datetime import date
 
-from fastapi import APIRouter, Depends, Header, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from pydantic import BaseModel, ConfigDict, Field
 
 from .config import DB_PATH
+from .rate_limit import RateLimiter, client_key
 from .risk_service import RiskAssessmentResult, score_and_persist
 
 WEBHOOK_SECRET_ENV_VAR = "FINXUM_N8N_WEBHOOK_SECRET"
 
 router = APIRouter(prefix="/webhooks/n8n", tags=["n8n"])
 
+# Looser than the public /risk/assess limit since legitimate callers here are
+# authenticated automation, but still bounded to slow down bearer-token
+# brute-forcing against this endpoint.
+_webhook_limiter = RateLimiter(max_requests=30, window_seconds=60)
 
-def verify_n8n_token(authorization: str | None = Header(default=None)) -> None:
-    """FastAPI dependency enforcing bearer-token auth for n8n webhook calls."""
+
+def verify_n8n_token(request: Request, authorization: str | None = Header(default=None)) -> None:
+    """FastAPI dependency enforcing rate limiting + bearer-token auth for n8n webhook calls."""
+    _webhook_limiter.check(client_key(request))
     secret = os.environ.get(WEBHOOK_SECRET_ENV_VAR)
     if not secret:
         raise HTTPException(

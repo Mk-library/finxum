@@ -3,6 +3,7 @@
 from datetime import date, timedelta
 from pathlib import Path
 import sys
+import time
 
 import plotly.express as px
 import streamlit as st
@@ -19,6 +20,8 @@ from app.demo_loader import load_synthetic_assessments
 from app.risk import calculate_risk
 
 _CATEGORY_COLORS = {"Low": "#2ca02c", "Medium": "#ff7f0e", "High": "#d62728"}
+_MAX_SUBMISSIONS_PER_WINDOW = 5
+_SUBMISSION_WINDOW_SECONDS = 60
 
 st.set_page_config(page_title="FinXum", page_icon="📊", layout="wide")
 initialize(DB_PATH)
@@ -26,6 +29,14 @@ initialize(DB_PATH)
 st.title("FinXum")
 st.caption("Financial risk analysis and invoice intelligence prototype")
 st.warning(DISCLAIMER)
+if "://" not in DB_PATH:
+    st.warning(
+        "Storage notice: this deployment is using local, non-persistent "
+        "storage. History and analytics data can be lost on redeploy or "
+        "restart. Set the DATABASE_URL environment variable to a persistent "
+        "database to remove this notice.",
+        icon="⚠️",
+    )
 
 page = st.sidebar.radio("Navigate", ["New Assessment", "History", "Analytics", "Methodology"])
 
@@ -40,6 +51,22 @@ if page == "New Assessment":
         submitted = st.form_submit_button("Assess risk")
 
     if submitted:
+        now = time.monotonic()
+        recent = [
+            t for t in st.session_state.get("submission_times", [])
+            if now - t < _SUBMISSION_WINDOW_SECONDS
+        ]
+        rate_limited = len(recent) >= _MAX_SUBMISSIONS_PER_WINDOW
+        if not rate_limited:
+            recent.append(now)
+        st.session_state.submission_times = recent
+
+    if submitted and rate_limited:
+        st.error(
+            f"Too many assessments submitted (max {_MAX_SUBMISSIONS_PER_WINDOW} "
+            f"per {_SUBMISSION_WINDOW_SECONDS}s). Please wait and try again."
+        )
+    elif submitted:
         try:
             result = calculate_risk(amount, issue_date, due_date, prior_late_payments)
             assessment = {

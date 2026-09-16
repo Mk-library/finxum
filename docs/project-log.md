@@ -147,6 +147,50 @@
   this work had not yet been pushed to `origin/main` at the time of this
   entry.
 
+## 2026-09-16 — Persistent-storage support and rate limiting (v0.1 hardening)
+
+- Two risks were identified by review: (1) the deployed Streamlit app's
+  SQLite file lives on Streamlit Community Cloud's local filesystem, which
+  is not guaranteed durable across redeploys/restarts, so History/Analytics
+  data could be silently lost; (2) the public Streamlit form and the
+  unauthenticated `POST /risk/assess` endpoint had no limit on how many
+  assessments a single caller could write.
+- Rewrote `app/database.py` on SQLAlchemy Core so the same `save_assessment`
+  / `list_assessments` / `initialize` functions work against either a local
+  SQLite file (unchanged default/dev/test behaviour, `db_path` a plain
+  filesystem path) or a persistent database (`db_path` a SQLAlchemy URL,
+  e.g. `postgresql+psycopg://...`), selected via the new `DATABASE_URL`
+  environment variable read in `app/config.py`. No caller-facing signature
+  changed. Added `sqlalchemy` as a direct dependency and `psycopg[binary]`
+  (via the `postgres` extra, and directly in `requirements.txt` for
+  Streamlit Cloud) for the Postgres path.
+- Added `app/main.py` startup warning (shown whenever `DB_PATH` is not a
+  URL) telling the user storage is local/non-persistent, so the gap is
+  visible in the UI rather than silent.
+- Added `app/rate_limit.py`: a small in-memory, per-client-IP limiter.
+  Applied to `POST /risk/assess` (10 requests/60s) and to
+  `POST /webhooks/n8n/risk-event` (30 requests/60s, ahead of token
+  verification, to slow bearer-token brute-forcing). This is single-process
+  and resets on restart; a multi-instance deployment would need a shared
+  store instead. Added a parallel per-session submission cooldown (max 5
+  submissions/60s) on the Streamlit "New Assessment" form, since Streamlit
+  does not expose per-client IP to application code the way FastAPI does.
+- Verified locally (not yet redeployed): `python -m pytest -q` — 88 passed,
+  0 failed (79 pre-existing + 9 new, covering the rate limiter, the
+  DATABASE_URL code path via a `sqlite:///` URL, the FastAPI 429 behavior,
+  the webhook 429 behavior, and the Streamlit warning/cooldown behavior).
+  Also manually verified against a running `uvicorn app.api:app`: the 11th
+  request in 60s to `/risk/assess` returns 429; data written via a
+  `DATABASE_URL=sqlite:///...` URL is readable by a separate process after
+  the first exits, confirming it does not depend on the writing process's
+  lifetime.
+- Not done as part of this entry: no production database has been
+  provisioned, and the live `finxum.streamlit.app` deployment's
+  `DATABASE_URL` secret has not been set — the deployed app still runs on
+  local SQLite until that configuration step is done. This is a deployment
+  action, not a code change, and is intentionally left to the project
+  owner.
+
 ## AI assistance
 
 AI tools may be used during development for code scaffolding, debugging, documentation and test assistance. Product decisions, validation, testing and final interpretation must remain attributable to the project owner and must reflect the actual implementation.
